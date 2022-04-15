@@ -1,2 +1,2 @@
 # DegreeVerify
-- Create DegreeVerify export file from PowerCampus of degree completers.
+- Create DegreeVerify export file of degree completers from PowerCampus.
