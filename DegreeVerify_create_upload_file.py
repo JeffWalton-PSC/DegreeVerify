@@ -618,8 +618,10 @@ def main():
     today = dt.datetime.today()
     today_str = today.strftime("%Y%m%d_%H%M")
 
+    # Edit these 3 lines
     start_date = np.datetime64("1946-01-01")
     end_date = np.datetime64("2022-01-01")
+    dataset_description = "Historic Degree Completions ~2000-2021"
 
     df = create_DV_df(start_date, end_date)
     logger.info(f"{df.shape=}")
@@ -631,7 +633,7 @@ def main():
         df.to_excel(writer, sheet_name='DV_file')
         logger.info(f"Excel file written: {xl_output}")
     
-    lw = write_DV_header(f'{base_fn}.txt', today.strftime("%Y%m%d"), "Historic Degree Completions ~2000-2021")
+    lw = write_DV_header(f'{base_fn}.txt', today.strftime("%Y%m%d"), dataset_description)
     logger.info(f"{lw} header line written to {base_fn}.txt")
     lw = write_DV_data(df, f'{base_fn}.txt')
     logger.info(f"{lw} lines written to {base_fn}.txt")
