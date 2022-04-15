@@ -1,2 +1,2 @@
 # DegreeVerify
-- Create DegreeVerify export file of degree completers from PowerCampus.
+- Create NSC Degree Verify export file of degree completers from PowerCampus SIS.
