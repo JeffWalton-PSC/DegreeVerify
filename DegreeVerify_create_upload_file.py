@@ -397,13 +397,16 @@ def create_DV_df(start_date:np.datetime64, end_date:np.datetime64) -> pd.DataFra
         if f not in df.columns:
             df[f] = ' '
 
-    # filter SSN
-    # missing
-    df = df.loc[~(df['Student SSN'].isna())]
+    # missing SSN
+    df = df.loc[~(df['Student SSN'].isna()),:]
+    # apply "NO SSN" label
     # foreign students: '000', '888', '999'
-    df = df.loc[~(df['Student SSN'].str.startswith('000'))]
-    df = df.loc[~(df['Student SSN'].str.startswith('888'))]
-    df = df.loc[~(df['Student SSN'].str.startswith('999'))]
+    df.loc[(df['Student SSN'].str.startswith('000')), 'Student SSN'] = "NO SSN"
+    df.loc[(df['Student SSN'].str.startswith('888')), 'Student SSN'] = "NO SSN"
+    df.loc[(df['Student SSN'].str.startswith('999')), 'Student SSN'] = "NO SSN"
+
+    # fill missing 'First Name'
+    df.loc[(df['First Name'].isna()), 'First Name'] = "NFN"
 
     df = df.sort_values(['Student SSN', 'Date Degree, Credential, or Certificate Awarded'])
 
