@@ -25,7 +25,9 @@ def people_data() -> pd.DataFrame:
     returns data from PEOPLE table
     """
     df_p = pc.select("PEOPLE",
-                fields=['PEOPLE_CODE_ID','GOVERNMENT_ID','FIRST_NAME','MIDDLE_NAME','LAST_NAME','SUFFIX','BIRTH_DATE'],
+                fields=['PEOPLE_CODE_ID', 'GOVERNMENT_ID', 'FIRST_NAME', 'MIDDLE_NAME', 'LAST_NAME',
+                        'SUFFIX', 'BIRTH_DATE', 'RELEASE_INFO'
+                        ],
                 where="BIRTH_DATE > '1800-01-01' and BIRTH_DATE < '2100-12-31' "
                 )
     df_p['MIDDLE_NAME'] = df_p['MIDDLE_NAME'].str.replace('.','', regex=False).fillna(' ')
@@ -242,6 +244,24 @@ def minor_data(df_td: pd.DataFrame) -> pd.DataFrame:
     return minor
 
 
+def stoplist_data() -> pd.DataFrame:
+    """
+    returns dataframe of students with outstanding financial obligations 
+    """
+    df_sl = pc.select("STOPLIST",
+                fields=['PEOPLE_CODE_ID', 'STOP_REASON', 'STOP_DATE'],
+                where="STOP_REASON in ('BURS', 'COLL', 'STAC') and CLEARED='N' "
+                )
+    df_sl = ( df_sl
+                .sort_values(['PEOPLE_CODE_ID', 'STOP_DATE'])
+                .drop_duplicates(subset=['PEOPLE_CODE_ID'], keep='last')
+                .drop(
+                    columns=['STOP_DATE'],
+                )
+    )
+    return df_sl
+
+
 def create_DV_df(start_date:np.datetime64, end_date:np.datetime64) -> pd.DataFrame:
     """
     create dataframe for Degree Verify data
@@ -269,6 +289,9 @@ def create_DV_df(start_date:np.datetime64, end_date:np.datetime64) -> pd.DataFra
 
     df_code_degree = code_degree()
     logger.info(f"{df_code_degree.shape=}")
+
+    df_stoplist = stoplist_data()
+    logger.info(f"{df_stoplist.shape=}")
 
     # remove minors
     df_td = df_td.loc[(df_td['DEGREE']!='MINOR'),:]
@@ -305,6 +328,11 @@ def create_DV_df(start_date:np.datetime64, end_date:np.datetime64) -> pd.DataFra
                     left_on=['DEGREE'], 
                     right_on=['CODE_VALUE_KEY'], 
                 )
+                .merge(
+                    df_stoplist,
+                    how='left',
+                    on=['PEOPLE_CODE_ID'], 
+                )
     )
 
     df['Record Type']='DD1'
@@ -318,6 +346,14 @@ def create_DV_df(start_date:np.datetime64, end_date:np.datetime64) -> pd.DataFra
     df.loc[df['HONORS'].isin(['MAGNA']), 'Academic Honors'] = "Magna Cum Laude"
     df.loc[df['HONORS'].isin(['SUMMA']), 'Academic Honors'] = "Summa Cum Laude"
     df.loc[df['DEGREE'].isin(['CERTIF']), 'Certificate Type'] = "2"
+
+    # FERPA Block
+    df['FERPA Block'] = "N"
+    df.loc[df['RELEASE_INFO'].isin(['NORL']), 'FERPA Block'] = "Y"
+
+    # School Financial Block
+    df['School Financial Block'] = "N"
+    df.loc[df['STOP_REASON'].isin(['BURS', 'COLL', 'STAC']), 'School Financial Block'] = "Y"
 
     df = df.rename(
         columns={
@@ -375,8 +411,6 @@ def create_DV_df(start_date:np.datetime64, end_date:np.datetime64) -> pd.DataFra
         'NCES CIP Code for Minor 4',
         'Honors Program',
         'Other Honors',
-        'FERPA Block',
-        'School Financial Block',
         'Name of Institution Granting Degree',
         'Reverse Transfer Flag',
         'Certificate Type',
