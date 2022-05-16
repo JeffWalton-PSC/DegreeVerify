@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse as ap
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -373,19 +374,6 @@ def create_DV_df(start_date:np.datetime64, end_date:np.datetime64) -> pd.DataFra
         }
     )
 
-    fill_list = [
-        'Minor Course of Study 1',
-        'Minor Course of Study 2',
-        'Minor Course of Study 3',
-        'Minor Course of Study 4',
-        'Academic Honors',
-        'Certificate Type',
-        'NCES CIP Code for Major 1',
-        'Attendance From Date',
-        'Attendance To Date',
-    ]
-    df[fill_list] = df[fill_list].fillna(' ')
-
     unused_fields = [
         'School/College/Division Awarding Degree',
         'Joint Institution/College/School/Division Name',
@@ -430,6 +418,19 @@ def create_DV_df(start_date:np.datetime64, end_date:np.datetime64) -> pd.DataFra
     for f in unused_fields:
         if f not in df.columns:
             df[f] = ' '
+
+    fill_list = [
+        'Minor Course of Study 1',
+        'Minor Course of Study 2',
+        'Minor Course of Study 3',
+        'Minor Course of Study 4',
+        'Academic Honors',
+        'Certificate Type',
+        'NCES CIP Code for Major 1',
+        'Attendance From Date',
+        'Attendance To Date',
+    ]
+    df[fill_list] = df[fill_list].fillna(' ')
 
     # missing SSN
     df = df.loc[~(df['Student SSN'].isna()),:]
@@ -651,14 +652,14 @@ def write_DV_trailer(out_fn: str, detail_record_count:int) -> int:
     return write_fw(out_fn, 'a', tlr_df, dv_tlr_def)
 
 
-def main():
+def main(start_date_str:str, end_date_str:str):
     today = dt.datetime.today()
     today_str = today.strftime("%Y%m%d_%H%M")
 
     # Edit these 3 lines
-    start_date = np.datetime64("1946-01-01")
-    end_date = np.datetime64("2022-01-01")
-    dataset_description = "Historic Degree Completions ~2000-2021"
+    start_date = np.datetime64(start_date_str)
+    end_date = np.datetime64(end_date_str)
+    dataset_description = f"Degree Completions {start_date_str} to {end_date_str}"
 
     df = create_DV_df(start_date, end_date)
     logger.info(f"{df.shape=}")
@@ -681,6 +682,18 @@ def main():
 if __name__ == "__main__":
     logger.info(f"Begin: {__file__}")
     logger.info(f'cwd: {os.getcwd()}')
-    main()
+
+    parser = ap.ArgumentParser(description="Create DegreeVerify file for National Student Cleqaringhouse.")
+    parser.add_argument("start_date", type=str, help="date after previous degree submissions, ex: 2022-01-15 ")
+    parser.add_argument("end_date", type=str, help="date after degree conferral, ex: 2022-05-15 ")
+
+    args = parser.parse_args()
+    start_date_str = args.start_date
+    end_date_str = args.end_date
+
+    logger.info(f'command line arguments: {start_date_str=}, {end_date_str=}')
+
+    main(start_date_str, end_date_str)
+
     logger.info(f"End: {__file__}")
 
