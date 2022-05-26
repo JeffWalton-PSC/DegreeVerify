@@ -354,7 +354,8 @@ def create_DV_df(start_date:np.datetime64, end_date:np.datetime64) -> pd.DataFra
 
     # School Financial Block
     df['School Financial Block'] = "N"
-    df.loc[df['STOP_REASON'].isin(['BURS', 'COLL', 'STAC']), 'School Financial Block'] = "Y"
+    # Due to NY State Law prohibiting holding transcripts because of debt, the following line is commented out.
+    # df.loc[df['STOP_REASON'].isin(['BURS', 'COLL', 'STAC']), 'School Financial Block'] = "Y"
 
     df = df.rename(
         columns={
